@@ -1,15 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { marked } from "marked";
 import { convertFileSrc } from '@tauri-apps/api/core';
 
-function Editor({ file, fontSize, isPreviewGlobal, setIsPreviewGlobal }) {
+function Editor({ file, fontSize,isPreviewGlobal, setIsPreviewGlobal }) {
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
   const [isEdited, setIsEdited] = useState(false);
   const [originalContent, setOriginalContent] = useState("");
-  const scrollableRef = useRef(null); // Ref for the scrollable container
 
   useEffect(() => {
     if (file && file.path) {
@@ -18,10 +17,6 @@ function Editor({ file, fontSize, isPreviewGlobal, setIsPreviewGlobal }) {
         setIsLoading(false);
       } else {
         loadFileContent(file.path);
-      }
-      // Scroll to the top when the file changes
-      if (scrollableRef.current) {
-        scrollableRef.current.scrollTop = 0;
       }
     } else {
       setContent("");
@@ -183,9 +178,11 @@ function Editor({ file, fontSize, isPreviewGlobal, setIsPreviewGlobal }) {
         ) : isPreviewGlobal ? (
           <div 
             className="prose prose-sm prose-blue p-6 h-full overflow-y-auto text-gray-900 max-w-none"
-            style={{ fontSize: `${fontSize}rem` }} // Dynamically adjust font size
+            style={{
+              fontSize: `${fontSize}rem`, // Dynamically adjust font size
+              fontFamily: `'Georgia', 'Times New Roman', Times, serif`, // Revert to Georgia/serif font stack
+            }}
             dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
-            ref={scrollableRef} // Apply ref to the scrollable container
           />
         ) : (
           <div className="relative h-full">
@@ -194,7 +191,6 @@ function Editor({ file, fontSize, isPreviewGlobal, setIsPreviewGlobal }) {
               value={content}
               onChange={handleContentChange}
               placeholder="Start writing..."
-              ref={scrollableRef} // Apply ref to the scrollable container
             />
             {isEdited && (
               <div className="absolute top-4 right-6 flex gap-2">
