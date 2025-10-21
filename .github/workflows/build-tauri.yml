@@ -26,7 +26,9 @@ jobs:
         run: npm ci
 
       - name: Build macOS release
-        run: npx tauri build
+        run: |
+          export CARGO_BUILD_TARGET=x86_64-apple-darwin
+          npx tauri build
 
       - name: List bundle folder (debug)
         run: ls -R src-tauri/target/release/bundle/
