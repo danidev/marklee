@@ -3,7 +3,7 @@ import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { marked } from "marked";
 import { convertFileSrc } from '@tauri-apps/api/core';
 
-function Editor({ file, onFileChange, isPreviewGlobal, setIsPreviewGlobal }) {
+function Editor({ file, isPreviewGlobal, setIsPreviewGlobal }) {
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [imageSrc, setImageSrc] = useState(null);
@@ -24,6 +24,25 @@ function Editor({ file, onFileChange, isPreviewGlobal, setIsPreviewGlobal }) {
     }
     setIsEdited(false);
   }, [file]);
+
+  // Customize the marked renderer to handle image paths
+  const renderer = new marked.Renderer();
+  renderer.image = (href, title, text) => {
+    // Ensure text and title have fallback values
+    const altText = text || "Image";
+    const imageTitle = title || "";
+
+    // Resolve the relative path against the current file's directory
+    const basePath = file.path.replace(/\/[^/]+$/, "/");
+    const resolvedPath = convertFileSrc(new URL(href.href, `file://${basePath}`).pathname);
+
+    return `<img src="${resolvedPath}" alt="${altText}" title="${imageTitle}" />`;
+  };
+
+  // Use the customized renderer
+  const renderMarkdown = (markdown) => {
+    return marked.parse(markdown, { renderer });
+  };
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -159,7 +178,7 @@ function Editor({ file, onFileChange, isPreviewGlobal, setIsPreviewGlobal }) {
         ) : isPreviewGlobal ? (
           <div 
             className="prose prose-sm prose-blue p-6 h-full overflow-y-auto text-gray-900 max-w-none"
-            dangerouslySetInnerHTML={{ __html: marked.parse(content) }}
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }} // Use renderMarkdown here
           />
         ) : (
           <div className="relative h-full">

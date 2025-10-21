@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { rename } from '@tauri-apps/plugin-fs';
+import { Folder, FileText, Image, File, RefreshCw, FolderOpen } from 'lucide-react';
 
 function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOpenFolder, onReload }) {
   const [expanded, setExpanded] = useState(new Set());
@@ -18,17 +19,17 @@ function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOp
 
   const getFileIcon = (file) => {
     if (file.type === 'folder') {
-      return expanded.has(file.path || file.name) ? '📂' : '📁';
+      return expanded.has(file.path || file.name) ? <FolderOpen size={16} /> : <Folder size={16} />;
     }
     
     switch (file.extension) {
-      case 'md': return '📝';
-      case 'txt': return '📄';
-      case 'csv': return '📊';
+      case 'md': return <FileText size={16} />;
+      case 'txt': return <FileText size={16} />;
+      case 'csv': return <FileText size={16} />;
       case 'png':
       case 'jpg':
-      case 'jpeg': return '🖼️';
-      default: return '📄';
+      case 'jpeg': return <Image size={16} />;
+      default: return <File size={16} />;
     }
   };
 
@@ -72,7 +73,7 @@ function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOp
           }}
         >
           <span className="mr-4 text-sm">
-            {getFileIcon(file)}
+            {getFileIcon(file)} {/* Updated to use lucide-react icons */}
           </span>
           {isRenaming ? (
             <input
@@ -112,7 +113,7 @@ function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOp
               className="text-xs text-gray-500 hover:text-blue-700 border border-gray-300 rounded px-2 py-1 bg-white"
               title="Reload"
             >
-              ⟳
+              <RefreshCw size="16"/>
             </button>
             <button
               onClick={onOpenFolder}
