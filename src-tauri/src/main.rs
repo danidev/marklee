@@ -44,7 +44,7 @@ fn main() {
                 "View",
                 true,
                 &[
-                    &MenuItem::with_id(app, "toggle-preview", "Toggle Preview", true, Some("CmdOrCtrl+P"))?,
+                    &MenuItem::with_id(app, "toggle-preview", "Toggle Preview", true, Some("CmdOrCtrl+E"))?,
                     &MenuItem::with_id(app, "toggle-sidebar", "Toggle Sidebar", true, Some("CmdOrCtrl+B"))?,
                 ],
             )?;

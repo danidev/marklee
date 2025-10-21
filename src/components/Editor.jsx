@@ -1,18 +1,62 @@
 import { useState, useEffect } from "react";
-import { readTextFile } from '@tauri-apps/plugin-fs';
+import { readTextFile, readFile } from '@tauri-apps/plugin-fs';
+import { marked } from "marked";
 
-function Editor({ file, onFileChange }) {
+function Editor({ file, isPreviewGlobal, setIsPreviewGlobal }) {
   const [content, setContent] = useState("");
-  const [isPreview, setIsPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [imageData, setImageData] = useState(null);
 
   useEffect(() => {
     if (file && file.path) {
-      loadFileContent(file.path);
+      if (isImageFile(file)) {
+        loadImageFile(file.path);
+      } else {
+        loadFileContent(file.path);
+      }
     } else {
       setContent("");
+      setImageData(null);
     }
   }, [file]);
+
+  // Add keyboard shortcut for Ctrl+E
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.ctrlKey && event.key === 'e') {
+        event.preventDefault();
+        // Only toggle if we're viewing a text file (not image)
+        if (file && !isImageFile(file)) {
+          setIsPreviewGlobal(prev => !prev);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [file]);
+
+  const isImageFile = (file) => {
+    return file && ['png', 'jpg', 'jpeg'].includes(file.extension);
+  };
+
+  const loadImageFile = async (filePath) => {
+    try {
+      setIsLoading(true);
+      // Read image as binary and convert to base64
+      const imageBytes = await readFile(filePath);
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBytes)));
+      const mimeType = `image/${file.extension === 'jpg' ? 'jpeg' : file.extension}`;
+      setImageData(`data:${mimeType};base64,${base64}`);
+    } catch (error) {
+      console.error('Error loading image as base64:', error);
+      setImageData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadFileContent = async (filePath) => {
     try {
@@ -31,18 +75,6 @@ function Editor({ file, onFileChange }) {
     setContent(e.target.value);
   };
 
-  const renderMarkdown = (text) => {
-    // Simple markdown renderer for now
-    return text
-      .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-semibold mb-4 text-gray-900">$1</h1>')
-      .replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold mb-3 mt-6 text-gray-900">$1</h2>')
-      .replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold mb-2 mt-5 text-gray-900">$1</h3>')
-      .replace(/\*\*(.*)\*\*/gim, '<strong class="font-semibold">$1</strong>')
-      .replace(/\*(.*)\*/gim, '<em class="italic">$1</em>')
-      .replace(/^\- (.*$)/gim, '<li class="mb-1">$1</li>')
-      .replace(/\n/gim, '<br>');
-  };
-
   if (!file) {
     return (
       <div className="flex flex-col items-center justify-center h-screen text-gray-500 text-center bg-white">
@@ -52,43 +84,85 @@ function Editor({ file, onFileChange }) {
     );
   }
 
-  return (
-    <div className="flex flex-col h-screen bg-white">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gray-50">
-        <h2 className="text-base font-semibold text-gray-900 m-0">{file.name}</h2>
-        <div className="flex gap-2">
+  // Shared header for both image and text files
+  const header = (
+    <div className="flex items-center justify-between px-3 border-b border-gray-200 bg-gray-50 h-14 min-h-[56px]">
+      <span className="text-xs text-gray-600 truncate font-semibold flex items-center h-14 min-h-[56px]" title={file.name}>
+        {file.name}
+      </span>
+      {!isImageFile(file) ? (
+        <div className="flex gap-2 items-center h-14 min-h-[56px]">
           <button 
             className={`px-3 py-1.5 border rounded text-xs font-medium cursor-pointer transition-colors ${
-              !isPreview 
+              !isPreviewGlobal 
                 ? 'bg-blue-500 text-white border-blue-500' 
                 : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
             }`}
-            onClick={() => setIsPreview(false)}
+            onClick={() => setIsPreviewGlobal(false)}
           >
             Edit
           </button>
           <button 
             className={`px-3 py-1.5 border rounded text-xs font-medium cursor-pointer transition-colors ${
-              isPreview 
+              isPreviewGlobal 
                 ? 'bg-blue-500 text-white border-blue-500' 
                 : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
             }`}
-            onClick={() => setIsPreview(true)}
+            onClick={() => setIsPreviewGlobal(true)}
           >
             Preview
           </button>
         </div>
+      ) : (
+        <div className="h-14 min-h-[56px] flex items-center" />
+      )}
+    </div>
+  );
+
+  // Handle image files
+  if (isImageFile(file)) {
+    return (
+      <div className="flex flex-col h-screen bg-white">
+        {header}
+        <div className="flex-1 overflow-auto p-6 bg-gray-50">
+          {isLoading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-gray-500">Loading image...</div>
+            </div>
+          ) : imageData ? (
+            <div className="flex items-center justify-center min-h-full">
+              <img 
+                src={imageData}
+                alt={file.name}
+                className="max-w-full max-h-full object-contain rounded shadow-lg bg-white p-2"
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center text-gray-500 p-8 bg-white rounded shadow">
+                <p>Unable to display image</p>
+                <p className="text-xs mt-2">{file.name}</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-      
+    );
+  }
+
+  // Handle text files
+  return (
+    <div className="flex flex-col h-screen bg-white">
+      {header}
       <div className="flex-1 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <div className="text-gray-500">Loading...</div>
           </div>
-        ) : isPreview ? (
+        ) : isPreviewGlobal ? (
           <div 
-            className="p-6 h-full overflow-y-auto text-sm leading-relaxed text-gray-900"
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
+            className="prose prose-sm prose-blue p-6 h-full overflow-y-auto text-gray-900 max-w-none"
+            dangerouslySetInnerHTML={{ __html: marked.parse(content) }}
           />
         ) : (
           <textarea

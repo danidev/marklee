@@ -13,6 +13,7 @@
     "fs:allow-read-dir",
     "fs:allow-read-file",
     "fs:allow-read-text-file",
-    "fs:scope-home-recursive"
+    "fs:scope-home-recursive",
+    "core:image:default"
   ]
 }

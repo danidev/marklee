@@ -44,7 +44,6 @@ function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOp
   };
 
   const renderFile = (file, level = 0) => {
-    console.log(file.type);
 
     const isExpanded = expanded.has(file.path || file.name);
     const isSelected = selectedFile?.path === file.path;
@@ -91,42 +90,22 @@ function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOp
 
   return (
     <div className="bg-white border-r border-gray-200 flex flex-col overflow-hidden" style={{ width: `${width}px` }}>
-      {!currentFolder ? (
-        <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
-          <p className="text-gray-500 text-sm mb-4">No folder selected</p>
+      <div className="p-3 border-b border-gray-200 bg-gray-50 h-14 min-h-[56px] flex items-center">
+        <div className="flex items-center justify-between w-full">
+          <span className="text-xs text-gray-600 truncate" title={currentFolder}>
+            {currentFolder ? currentFolder.split('/').pop() : 'No folder selected'}
+          </span>
           <button
             onClick={onOpenFolder}
-            className="px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+            className="text-xs text-blue-500 hover:text-blue-700"
           >
-            Open Folder
+            {currentFolder ? 'Change' : 'Open Folder'}
           </button>
         </div>
-      ) : (
-        <>
-          <div className="p-3 border-b border-gray-200 bg-gray-50">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-600 truncate" title={currentFolder}>
-                {currentFolder.split('/').pop()}
-              </span>
-              <button
-                onClick={onOpenFolder}
-                className="text-xs text-blue-500 hover:text-blue-700"
-              >
-                Change
-              </button>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto py-2">
-            {files.length > 0 ? (
-              files.map(file => renderFile(file))
-            ) : (
-              <div className="p-4 text-center text-gray-500 text-sm">
-                No supported files found (.md, .txt, .csv, images)
-              </div>
-            )}
-          </div>
-        </>
-      )}
+      </div>
+      {currentFolder && (<div className="flex-1 overflow-y-auto py-2">
+        {files.map(file => renderFile(file))}
+      </div>)}
     </div>
   );
 }
