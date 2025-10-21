@@ -25,10 +25,8 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
-      - name: Build macOS universal release (Big Sur+)
-        run: |
-          export MACOSX_DEPLOYMENT_TARGET=11.0
-          npx tauri build -- --target universal-apple-darwin
+      - name: Build macOS release
+        run: npx tauri build
 
       - name: List bundle folder (debug)
         run: ls -R src-tauri/target/release/bundle/
