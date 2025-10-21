@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { rename } from '@tauri-apps/plugin-fs';
 
-function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOpenFolder }) {
+function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOpenFolder, onReload }) {
   const [expanded, setExpanded] = useState(new Set());
   const [renameTarget, setRenameTarget] = useState(null);
   const [renameValue, setRenameValue] = useState("");
@@ -106,12 +106,21 @@ function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOp
           <span className="text-xs text-gray-600 truncate" title={currentFolder}>
             {currentFolder ? currentFolder.split('/').pop() : 'No folder selected'}
           </span>
-          <button
-            onClick={onOpenFolder}
-            className="text-xs text-blue-500 hover:text-blue-700"
-          >
-            {currentFolder ? 'Change' : 'Open Folder'}
-          </button>
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={onReload}
+              className="text-xs text-gray-500 hover:text-blue-700 border border-gray-300 rounded px-2 py-1 bg-white"
+              title="Reload"
+            >
+              ⟳
+            </button>
+            <button
+              onClick={onOpenFolder}
+              className="text-xs text-blue-500 hover:text-blue-700"
+            >
+              {currentFolder ? 'Change' : 'Open Folder'}
+            </button>
+          </div>
         </div>
       </div>
       {currentFolder && (<div className="flex-1 overflow-y-auto py-2">

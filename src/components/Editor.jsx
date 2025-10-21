@@ -1,37 +1,39 @@
 import { useState, useEffect } from "react";
-import { readTextFile, readFile } from '@tauri-apps/plugin-fs';
+import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { marked } from "marked";
+import { convertFileSrc } from '@tauri-apps/api/core';
 
-function Editor({ file, isPreviewGlobal, setIsPreviewGlobal }) {
+function Editor({ file, onFileChange, isPreviewGlobal, setIsPreviewGlobal }) {
   const [content, setContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [imageData, setImageData] = useState(null);
+  const [imageSrc, setImageSrc] = useState(null);
+  const [isEdited, setIsEdited] = useState(false);
+  const [originalContent, setOriginalContent] = useState("");
 
   useEffect(() => {
     if (file && file.path) {
       if (isImageFile(file)) {
-        loadImageFile(file.path);
+        setImageSrc(convertFileSrc(file.path));
+        setIsLoading(false);
       } else {
         loadFileContent(file.path);
       }
     } else {
       setContent("");
-      setImageData(null);
+      setImageSrc(null);
     }
+    setIsEdited(false);
   }, [file]);
 
-  // Add keyboard shortcut for Ctrl+E
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.ctrlKey && event.key === 'e') {
         event.preventDefault();
-        // Only toggle if we're viewing a text file (not image)
         if (file && !isImageFile(file)) {
           setIsPreviewGlobal(prev => !prev);
         }
       }
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
@@ -42,30 +44,15 @@ function Editor({ file, isPreviewGlobal, setIsPreviewGlobal }) {
     return file && ['png', 'jpg', 'jpeg'].includes(file.extension);
   };
 
-  const loadImageFile = async (filePath) => {
-    try {
-      setIsLoading(true);
-      // Read image as binary and convert to base64
-      const imageBytes = await readFile(filePath);
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(imageBytes)));
-      const mimeType = `image/${file.extension === 'jpg' ? 'jpeg' : file.extension}`;
-      setImageData(`data:${mimeType};base64,${base64}`);
-    } catch (error) {
-      console.error('Error loading image as base64:', error);
-      setImageData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const loadFileContent = async (filePath) => {
     try {
       setIsLoading(true);
       const fileContent = await readTextFile(filePath);
       setContent(fileContent);
+      setOriginalContent(fileContent);
     } catch (error) {
-      console.error('Error loading file:', error);
       setContent("Error loading file: " + error.message);
+      setOriginalContent("Error loading file: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -73,6 +60,23 @@ function Editor({ file, isPreviewGlobal, setIsPreviewGlobal }) {
 
   const handleContentChange = (e) => {
     setContent(e.target.value);
+    setIsEdited(e.target.value !== originalContent);
+  };
+
+  const handleSave = async () => {
+    if (!file || !file.path) return;
+    try {
+      await writeTextFile(file.path, content);
+      setOriginalContent(content);
+      setIsEdited(false);
+    } catch (err) {
+      alert("Failed to save file: " + err);
+    }
+  };
+
+  const handleRevert = () => {
+    setContent(originalContent);
+    setIsEdited(false);
   };
 
   if (!file) {
@@ -84,7 +88,6 @@ function Editor({ file, isPreviewGlobal, setIsPreviewGlobal }) {
     );
   }
 
-  // Shared header for both image and text files
   const header = (
     <div className="flex items-center justify-between px-3 border-b border-gray-200 bg-gray-50 h-14 min-h-[56px]">
       <span className="text-xs text-gray-600 truncate font-semibold flex items-center h-14 min-h-[56px]" title={file.name}>
@@ -119,30 +122,25 @@ function Editor({ file, isPreviewGlobal, setIsPreviewGlobal }) {
     </div>
   );
 
-  // Handle image files
   if (isImageFile(file)) {
     return (
       <div className="flex flex-col h-screen bg-white">
         {header}
-        <div className="flex-1 overflow-auto p-6 bg-gray-50">
+        <div className="flex-1 overflow-auto p-6 bg-gray-50 flex items-center justify-center">
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-gray-500">Loading image...</div>
             </div>
-          ) : imageData ? (
-            <div className="flex items-center justify-center min-h-full">
-              <img 
-                src={imageData}
-                alt={file.name}
-                className="max-w-full max-h-full object-contain rounded shadow-lg bg-white p-2"
-              />
-            </div>
+          ) : imageSrc ? (
+            <img 
+              src={imageSrc}
+              alt={file.name}
+              className="max-w-full max-h-full object-contain rounded shadow-lg bg-white p-2"
+            />
           ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center text-gray-500 p-8 bg-white rounded shadow">
-                <p>Unable to display image</p>
-                <p className="text-xs mt-2">{file.name}</p>
-              </div>
+            <div className="text-center text-gray-500 p-8 bg-white rounded shadow">
+              <p>Unable to display image</p>
+              <p className="text-xs mt-2">{file.name}</p>
             </div>
           )}
         </div>
@@ -150,7 +148,6 @@ function Editor({ file, isPreviewGlobal, setIsPreviewGlobal }) {
     );
   }
 
-  // Handle text files
   return (
     <div className="flex flex-col h-screen bg-white">
       {header}
@@ -165,12 +162,30 @@ function Editor({ file, isPreviewGlobal, setIsPreviewGlobal }) {
             dangerouslySetInnerHTML={{ __html: marked.parse(content) }}
           />
         ) : (
-          <textarea
-            className="w-full h-full border-none outline-none p-6 font-mono text-sm leading-relaxed resize-none bg-white text-gray-900 placeholder-gray-500"
-            value={content}
-            onChange={handleContentChange}
-            placeholder="Start writing..."
-          />
+          <div className="relative h-full">
+            <textarea
+              className="w-full h-full border-none outline-none p-6 font-mono text-sm leading-relaxed resize-none bg-white text-gray-900 placeholder-gray-500"
+              value={content}
+              onChange={handleContentChange}
+              placeholder="Start writing..."
+            />
+            {isEdited && (
+              <div className="absolute top-4 right-6 flex gap-2">
+                <button
+                  className="px-4 py-1.5 bg-blue-500 text-white text-xs rounded shadow hover:bg-blue-600 transition"
+                  onClick={handleSave}
+                >
+                  Save
+                </button>
+                <button
+                  className="px-4 py-1.5 bg-gray-200 text-gray-700 text-xs rounded shadow hover:bg-gray-300 transition"
+                  onClick={handleRevert}
+                >
+                  Revert
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

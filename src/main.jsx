@@ -1,9 +1,5 @@
-import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 
-createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-);
+// Remove StrictMode to avoid double rendering/effects in development
+createRoot(document.getElementById("root")).render(<App />);
