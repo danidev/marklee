@@ -8,12 +8,19 @@ import { buildFileTreeRecursive } from "./lib/fileTree";
 import "./App.css";
 
 function App() {
+  // Load preferences from localStorage
+  const [showSidebar, setShowSidebar] = useState(() => {
+    const stored = localStorage.getItem('marklee-showSidebar');
+    return stored === null ? true : stored === "true";
+  });
+  const [isPreviewGlobal, setIsPreviewGlobal] = useState(() => {
+    const stored = localStorage.getItem('marklee-isPreviewGlobal');
+    return stored === null ? true : stored === "true";
+  });
   const [selectedFile, setSelectedFile] = useState(null);
   const [sidebarWidth, setSidebarWidth] = useState(300);
-  const [showSidebar, setShowSidebar] = useState(true);
   const [currentFolder, setCurrentFolder] = useState(null);
   const [files, setFiles] = useState([]);
-  const [isPreviewGlobal, setIsPreviewGlobal] = useState(true);
   const listenersRegistered = useRef(false);
 
   // Load saved folder on app start
@@ -23,6 +30,15 @@ function App() {
       loadFolder(savedFolder);
     }
   }, []);
+
+  // Persist showSidebar and isPreviewGlobal changes
+  useEffect(() => {
+    localStorage.setItem('marklee-showSidebar', showSidebar);
+  }, [showSidebar]);
+
+  useEffect(() => {
+    localStorage.setItem('marklee-isPreviewGlobal', isPreviewGlobal);
+  }, [isPreviewGlobal]);
 
   const loadFolder = async (folderPath) => {
     try {
