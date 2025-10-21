@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
-import { readDir } from '@tauri-apps/plugin-fs';
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
 import { buildFileTreeRecursive } from "./lib/fileTree";

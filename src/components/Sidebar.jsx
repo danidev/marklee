@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
+import { rename } from '@tauri-apps/plugin-fs';
 
 function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOpenFolder }) {
   const [expanded, setExpanded] = useState(new Set());
+  const [renameTarget, setRenameTarget] = useState(null);
+  const [renameValue, setRenameValue] = useState("");
 
   const toggleExpanded = (path) => {
     const newExpanded = new Set(expanded);
@@ -29,25 +32,23 @@ function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOp
     }
   };
 
-  const getFileCount = (folder) => {
-    if (folder.type !== 'folder' || !folder.children) return 0;
-    
-    let count = 0;
-    folder.children.forEach(child => {
-      if (child.type === 'file') {
-        count++;
-      } else if (child.type === 'folder') {
-        count += getFileCount(child);
-      }
-    });
-    return count;
+  const handleRename = async (file) => {
+    if (!file || !renameValue.trim()) return;
+    try {
+      const oldPath = file.path;
+      const newPath = oldPath.replace(/[^/]+$/, renameValue.trim());
+      await rename(oldPath, newPath);
+      setRenameTarget(null);
+      window.location.reload();
+    } catch (err) {
+      alert("Rename failed: " + err);
+    }
   };
 
   const renderFile = (file, level = 0) => {
-
     const isExpanded = expanded.has(file.path || file.name);
     const isSelected = selectedFile?.path === file.path;
-    const fileCount = file.type === 'folder' ? getFileCount(file) : 0;
+    const isRenaming = renameTarget?.path === file.path;
 
     return (
       <div key={file.path || file.name}>
@@ -65,18 +66,28 @@ function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOp
               onFileSelect(file);
             }
           }}
+          onDoubleClick={() => {
+            setRenameTarget(file);
+            setRenameValue(file.name);
+          }}
         >
           <span className="mr-4 text-sm">
             {getFileIcon(file)}
           </span>
-          <span className="truncate text-xs flex-1">{file.name}</span>
-          {file.type === 'folder' && fileCount > 0 && (
-            <span className={`text-xs ml-2 px-1.5 py-0.5 rounded ${
-              isSelected 
-                ? 'bg-blue-400 text-white' 
-                : 'bg-gray-200 text-gray-600'
-            }`}>
-            </span>
+          {isRenaming ? (
+            <input
+              className="border px-2 py-1 text-xs rounded flex-1"
+              value={renameValue}
+              autoFocus
+              onChange={e => setRenameValue(e.target.value)}
+              onBlur={() => handleRename(file)}
+              onKeyDown={e => {
+                if (e.key === "Enter") handleRename(file);
+                if (e.key === "Escape") setRenameTarget(null);
+              }}
+            />
+          ) : (
+            <span className="truncate text-xs flex-1">{file.name}</span>
           )}
         </div>
         {file.type === 'folder' && isExpanded && file.children && (
