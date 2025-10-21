@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
@@ -21,6 +21,11 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [currentFolder, setCurrentFolder] = useState(null);
   const [files, setFiles] = useState([]);
+  const [fontSizeTrigger, setFontSizeTrigger] = useState(0); // Trigger for re-rendering Editor
+  const [globalFontSize, setGlobalFontSize] = useState(() => {
+    // Load font size from localStorage or default to 1
+    return parseFloat(localStorage.getItem("marklee-fontSize")) || 1;
+  });
 
   // Load saved folder on app start
   useEffect(() => {
@@ -41,6 +46,11 @@ function App() {
   useEffect(() => {
     localStorage.setItem('marklee-isPreviewGlobal', isPreviewGlobal);
   }, [isPreviewGlobal]);
+
+  useEffect(() => {
+    // Update localStorage whenever globalFontSize changes
+    localStorage.setItem("marklee-fontSize", globalFontSize);
+  }, [globalFontSize]);
 
   const loadFolder = async (folderPath) => {
     try {
@@ -139,6 +149,16 @@ function App() {
       console.log('menu-redo event received');
     }).then(unsub => unsubscribes.push(unsub));
 
+    listen('menu-increase-font-size', () => {
+      console.log('menu-increase-font-size event received');
+      setGlobalFontSize(prev => Math.min(prev + 0.1, 2)); // Max 200%
+    }).then(unsub => unsubscribes.push(unsub));
+
+    listen('menu-decrease-font-size', () => {
+      console.log('menu-decrease-font-size event received');
+      setGlobalFontSize(prev => Math.max(prev - 0.1, 0.5)); // Min 50%
+    }).then(unsub => unsubscribes.push(unsub));
+
     return () => {
       unsubscribes.forEach(unsub => unsub());
     };
@@ -170,6 +190,8 @@ function App() {
           onFileChange={setSelectedFile}
           isPreviewGlobal={isPreviewGlobal}
           setIsPreviewGlobal={setIsPreviewGlobal}
+          fontSize={globalFontSize} // Pass globalFontSize to Editor
+          key={fontSizeTrigger} // Force re-render when fontSizeTrigger changes
         />
       </div>
     </div>

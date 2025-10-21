@@ -46,6 +46,8 @@ fn main() {
                 &[
                     &MenuItem::with_id(app, "toggle-preview", "Toggle Preview", true, Some("CmdOrCtrl+E"))?,
                     &MenuItem::with_id(app, "toggle-sidebar", "Toggle Sidebar", true, Some("CmdOrCtrl+B"))?,
+                    &MenuItem::with_id(app, "increase-font-size", "Increase Font Size", true, Some("CmdOrCtrl+1"))?, // Updated shortcut
+                    &MenuItem::with_id(app, "decrease-font-size", "Decrease Font Size", true, Some("CmdOrCtrl+-"))?,
                 ],
             )?;
 
@@ -91,6 +93,14 @@ fn main() {
                         "toggle-sidebar" => {
                             println!("Toggle sidebar requested");
                             window.emit("menu-toggle-sidebar", ()).unwrap();
+                        }
+                        "increase-font-size" => {
+                            println!("Increase font size requested");
+                            window.emit("menu-increase-font-size", ()).unwrap();
+                        }
+                        "decrease-font-size" => {
+                            println!("Decrease font size requested");
+                            window.emit("menu-decrease-font-size", ()).unwrap();
                         }
                         _ => {}
                     }
