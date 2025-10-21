@@ -24,6 +24,9 @@ jobs:
 
       - name: Install Node dependencies
         run: npm ci
+      
+      - name: Install Rust target for Intel macOS
+        run: rustup target add x86_64-apple-darwin
 
       - name: Build macOS release
         run: |
