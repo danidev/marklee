@@ -28,7 +28,7 @@ jobs:
       - name: Build macOS universal release (Big Sur+)
         run: |
           export MACOSX_DEPLOYMENT_TARGET=11.0
-          npx tauri build --release -- --target universal-apple-darwin
+          npx tauri build -- --target universal-apple-darwin
 
       - name: List bundle folder (debug)
         run: ls -R src-tauri/target/release/bundle/
@@ -40,7 +40,7 @@ jobs:
           path: |
             src-tauri/target/release/bundle/dmg/**/*.dmg
             src-tauri/target/release/bundle/macos/**/*.app
-            
+
 #  build-linux:
 #    runs-on: ubuntu-latest
 #   steps:
