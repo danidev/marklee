@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
-import { listen } from '@tauri-apps/api/event';
-import { open } from '@tauri-apps/plugin-dialog';
-import { writeTextFile } from '@tauri-apps/plugin-fs';
+import { listenEvent, openFolderDialog } from './lib/tauriUtils';
 import Sidebar from "./components/Sidebar";
 import Editor from "./components/Editor";
 import { buildFileTreeRecursive } from "./lib/fileTree";
+import { writeTextFile } from './lib/fsUtils';
 import "./App.css";
 
 function App() {
@@ -69,7 +68,7 @@ function App() {
 
   const openFolder = async () => {
     try {
-      const selected = await open({
+      const selected = await openFolderDialog({
         directory: true,
         multiple: false,
         title: 'Select Notes Folder',
@@ -112,49 +111,49 @@ function App() {
     // Listen for menu events
     const unsubscribes = [];
 
-    listen('menu-new', () => {
+    listenEvent('menu-new', () => {
       console.log('menu-new event received');
       newFile();
     }).then(unsub => unsubscribes.push(unsub));
 
-    listen('menu-open', () => {
+    listenEvent('menu-open', () => {
       console.log('menu-open event received');
       openFolder();
     }).then(unsub => unsubscribes.push(unsub));
 
-    listen('menu-open-folder', () => {
+    listenEvent('menu-open-folder', () => {
       console.log('menu-open-folder event received');
       openFolder();
     }).then(unsub => unsubscribes.push(unsub));
 
-    listen('menu-save', () => {
+    listenEvent('menu-save', () => {
       console.log('menu-save event received');
     }).then(unsub => unsubscribes.push(unsub));
 
-    listen('menu-toggle-preview', () => {
+    listenEvent('menu-toggle-preview', () => {
       console.log('menu-toggle-preview event received');
       setIsPreviewGlobal(prev => !prev);
     }).then(unsub => unsubscribes.push(unsub));
 
-    listen('menu-toggle-sidebar', () => {
+    listenEvent('menu-toggle-sidebar', () => {
       console.log('menu-toggle-sidebar event received');
       setShowSidebar(prev => !prev);
     }).then(unsub => unsubscribes.push(unsub));
 
-    listen('menu-undo', () => {
+    listenEvent('menu-undo', () => {
       console.log('menu-undo event received');
     }).then(unsub => unsubscribes.push(unsub));
 
-    listen('menu-redo', () => {
+    listenEvent('menu-redo', () => {
       console.log('menu-redo event received');
     }).then(unsub => unsubscribes.push(unsub));
 
-    listen('menu-increase-font-size', () => {
+    listenEvent('menu-increase-font-size', () => {
       console.log('menu-increase-font-size event received');
       setGlobalFontSize(prev => Math.min(prev + 0.1, 2)); // Max 200%
     }).then(unsub => unsubscribes.push(unsub));
 
-    listen('menu-decrease-font-size', () => {
+    listenEvent('menu-decrease-font-size', () => {
       console.log('menu-decrease-font-size event received');
       setGlobalFontSize(prev => Math.max(prev - 0.1, 0.5)); // Min 50%
     }).then(unsub => unsubscribes.push(unsub));

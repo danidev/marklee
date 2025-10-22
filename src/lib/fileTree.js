@@ -1,4 +1,4 @@
-import { readDir } from '@tauri-apps/plugin-fs';
+import { readDir } from './fsUtils';
 
 const supportedExtensions = ['.md', '.txt', '.csv', '.png', '.jpg', '.jpeg'];
 

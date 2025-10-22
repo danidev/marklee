@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { rename } from '@tauri-apps/plugin-fs';
+import { rename } from '../lib/fsUtils';
 import { Folder, FileText, Image, File, RefreshCw, FolderOpen } from 'lucide-react';
 
 function Sidebar({ width, onFileSelect, selectedFile, files, currentFolder, onOpenFolder, onReload }) {

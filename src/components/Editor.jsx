@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+import { readTextFile, writeTextFile } from '../lib/fsUtils';
 import { marked } from "marked";
 import { convertFileSrc } from '@tauri-apps/api/core';
 
