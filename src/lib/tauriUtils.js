@@ -1,5 +1,5 @@
 import { listen } from '@tauri-apps/api/event';
-import { open } from '@tauri-apps/plugin/dialog';
+import { open } from '@tauri-apps/plugin-dialog';
 
 /**
  * Listen to a Tauri event.
