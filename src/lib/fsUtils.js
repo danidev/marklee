@@ -1,4 +1,5 @@
 import { readTextFile as tauriReadTextFile, writeTextFile as tauriWriteTextFile, rename as tauriRename, readDir as tauriReadDir } from '@tauri-apps/plugin-fs';
+import { convertFileSrc as tauriConvertFileSrc } from '@tauri-apps/api/core';
 
 /**
  * Reads the content of a file.
@@ -37,3 +38,12 @@ export const rename = async (oldPath, newPath) => {
 export const readDir = async (dirPath) => {
   return await tauriReadDir(dirPath);
 };
+
+/**
+ * Converts a file path to a file URL.
+ * @param {string} path - The path of the file to convert.
+ * @returns {string} - The file URL.
+ */
+export function convertFileSrc(path) {
+  return tauriConvertFileSrc(path);
+}

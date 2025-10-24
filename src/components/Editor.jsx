@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { readTextFile, writeTextFile } from '../lib/fsUtils';
+import { readTextFile, writeTextFile, convertFileSrc } from '../lib/fsUtils';
 import { marked } from "marked";
-import { convertFileSrc } from '@tauri-apps/api/core';
 
 function Editor({ file, fontSize,isPreviewGlobal, setIsPreviewGlobal }) {
   const [content, setContent] = useState("");
